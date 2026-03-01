@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#c0552a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Whisker Meals">
+<link rel="manifest" href="manifest.json">
+<title>Whisker Meals</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #fdf6ec;
+    --warm: #f5e6cf;
+    --rust: #c0552a;
+    --rust-light: #e8795a;
+    --dark: #1c1410;
+    --mid: #6b4c3b;
+    --green: #3d6b4f;
+    --green-light: #5a9e72;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--cream);
+    font-family: 'DM Mono', monospace;
+    color: var(--dark);
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-image:
+      radial-gradient(ellipse at 15% 5%, #f0d9b5 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 95%, #e8d0b0 0%, transparent 45%);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Header */
+  .app-header {
+    background: white;
+    padding: 16px 20px 0;
+    box-shadow: 0 1px 0 var(--warm);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0;
+  }
+
+  .cat-icon { font-size: 32px; line-height: 1; }
+
+  .header-text h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--rust);
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+
+  .header-text .sub {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-top: 2px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    margin-top: 12px;
+    gap: 0;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--mid);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab.active { color: var(--rust); border-bottom-color: var(--rust); }
+
+  /* Content */
+  .content { padding: 16px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .stat {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 16px rgba(96,50,20,0.09);
+  }
+
+  .stat .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--rust);
+    line-height: 1;
+  }
+
+  .stat .lbl {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-top: 4px;
+  }
+
+  /* Card */
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 16px rgba(96,50,20,0.09);
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .card:nth-child(2) { animation-delay: 0.05s; }
+  .card:nth-child(3) { animation-delay: 0.1s; }
+
+  .card-title {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::after { content: ''; flex: 1; height: 1px; background: var(--warm); }
+  .card-title .badge { font-size: 9px; color: var(--green); opacity: 0; transition: opacity 0.3s; }
+  .card-title .badge.show { opacity: 1; }
+
+  /* Days grid */
+  .days {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .day {
+    flex: 1;
+    aspect-ratio: 0.75;
+    border: 2px solid var(--warm);
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    -webkit-touch-callout: none;
+  }
+
+  .day .d-abbr { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; color: var(--mid); }
+  .day .d-num { font-size: 13px; color: var(--dark); }
+  .day .d-dot { width: 4px; height: 4px; background: var(--rust-light); border-radius: 50%; }
+
+  .day.scheduled { border-color: var(--rust-light); background: #fff5f0; }
+  .day.scheduled .d-abbr { color: var(--rust); }
+  .day.fed { background: var(--green); border-color: var(--green); }
+  .day.fed .d-abbr, .day.fed .d-num { color: white; }
+  .day.fed .d-dot { background: rgba(255,255,255,0.5); }
+  .day.fed::after { content: '✓'; position: absolute; top: 3px; right: 5px; font-size: 9px; color: white; opacity: 0.8; }
+  .day.today { box-shadow: 0 0 0 2px var(--rust); }
+  .day:active { transform: scale(0.93); }
+
+  /* Buttons */
+  .feed-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--rust);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .feed-btn:active { transform: scale(0.98); }
+  .feed-btn:disabled { background: var(--green); }
+
+  .note { font-size: 11px; color: var(--mid); margin-top: 12px; line-height: 1.7; }
+  .note strong { color: var(--rust); font-weight: 400; }
+
+  /* History */
+  .hist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--warm);
+    border-radius: 10px;
+    font-size: 12px;
+    color: var(--mid);
+    margin-bottom: 8px;
+  }
+
+  /* Settings */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .setting-label { font-size: 12px; color: var(--mid); }
+  .setting-label small { display: block; font-size: 9px; opacity: 0.7; margin-top: 2px; }
+
+  .time-input {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    border: 2px solid var(--warm);
+    border-radius: 10px;
+    padding: 8px 12px;
+    color: var(--dark);
+    background: white;
+    width: 100px;
+    text-align: center;
+  }
+  .time-input:focus { outline: none; border-color: var(--rust-light); }
+
+  .hint { font-size: 10px; color: var(--mid); opacity: 0.8; margin-bottom: 12px; line-height: 1.6; }
+
+  .msg-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--warm);
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--mid);
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+  .msg-item span { flex: 1; }
+  .del-btn {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--mid);
+    color: var(--mid);
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .del-btn:active { background: var(--rust); border-color: var(--rust); color: white; }
+
+  .add-row { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
+  .add-row textarea {
+    flex: 1;
+    min-height: 60px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    border: 2px solid var(--warm);
+    border-radius: 10px;
+    padding: 10px;
+    color: var(--dark);
+    background: white;
+    resize: none;
+    line-height: 1.5;
+  }
+  .add-row textarea:focus { outline: none; border-color: var(--rust-light); }
+  .add-row textarea::placeholder { color: #bba898; }
+  .add-btn {
+    padding: 10px 14px;
+    background: var(--rust);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    align-self: flex-end;
+  }
+
+  /* Notification permission banner */
+  .notif-banner {
+    background: linear-gradient(135deg, var(--rust) 0%, var(--rust-light) 100%);
+    color: white;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .notif-banner.show { display: block; }
+  .notif-banner p { font-size: 12px; line-height: 1.6; margin-bottom: 12px; opacity: 0.95; }
+  .notif-banner button {
+    width: 100%;
+    padding: 12px;
+    background: white;
+    color: var(--rust);
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .install-banner {
+    background: var(--dark);
+    color: white;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .install-banner.show { display: block; }
+  .install-banner p { font-size: 12px; line-height: 1.6; margin-bottom: 12px; opacity: 0.85; }
+  .install-banner button {
+    width: 100%;
+    padding: 12px;
+    background: var(--rust);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .test-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--rust);
+    border: 2px solid var(--rust);
+    border-radius: 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    transition: all 0.2s;
+  }
+  .test-btn:active { background: var(--rust); color: white; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--dark);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 100px;
+    font-size: 13px;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 99;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-top">
+    <span class="cat-icon">🐱</span>
+    <div class="header-text">
+      <h1>Whisker Meals</h1>
+      <p class="sub">Wed &amp; Sun evenings</p>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('tracker')">📋 Tracker</button>
+    <button class="tab" onclick="showTab('settings')">⚙️ Settings</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- TRACKER -->
+  <div class="panel active" id="panel-tracker">
+
+    <div class="notif-banner" id="notif-banner">
+      <p>🔔 Enable notifications so Whisker Meals can remind you on Wednesday and Sunday evenings!</p>
+      <button onclick="requestNotifications()">Enable Notifications</button>
+    </div>
+
+    <div class="install-banner" id="install-banner">
+      <p>📱 Add Whisker Meals to your home screen for the full app experience with notifications!</p>
+      <button onclick="installApp()">Add to Home Screen</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="num" id="fed-count">0</div><div class="lbl">Fed this week</div></div>
+      <div class="stat"><div class="num" id="remaining">2</div><div class="lbl">Still needed</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">This week</div>
+      <div class="days" id="days"></div>
+      <button class="feed-btn" id="feed-btn" onclick="markToday()">🐟 Mark fed today</button>
+      <div class="note" id="note"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recent feeds</div>
+      <div id="history"></div>
+    </div>
+
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="panel" id="panel-settings">
+
+    <div class="card">
+      <div class="card-title">Reminder times <span class="badge" id="time-saved">✓ saved</span></div>
+      <div class="setting-row">
+        <div class="setting-label">Wednesday<small>Evening reminder</small></div>
+        <input type="time" class="time-input" id="time-wed" value="18:00" onchange="saveTimes()">
+      </div>
+      <div class="setting-row" style="margin-bottom:0">
+        <div class="setting-label">Sunday<small>Evening reminder</small></div>
+        <input type="time" class="time-input" id="time-sun" value="18:00" onchange="saveTimes()">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Messages <span class="badge" id="msg-saved">✓ saved</span></div>
+      <p class="hint">A random message is chosen each time. Add your own or delete ones you don't want.</p>
+      <div id="messages-list"></div>
+      <div class="add-row">
+        <textarea id="new-msg" placeholder="Add a new reminder message..."></textarea>
+        <button class="add-btn" onclick="addMessage()">+ Add</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Notifications</div>
+      <button class="test-btn" onclick="sendTestNotification()">🔔 Send test notification</button>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const DAY_ABBR = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const SCHEDULED = [0, 3];
+  const DEFAULT_MESSAGES = [
+    '🐟 Wet food time! Your cats are waiting for their evening meal.',
+    '😺 Mrow! Your cats say it\'s wet food evening. Time to open a pouch!',
+    '🐱 Don\'t forget — it\'s wet food night for the cats!',
+  ];
+
+  // ── Storage ────────────────────────────────────────────────────────────────
+  function getData(key, fallback) {
+    try { const v = localStorage.getItem(key); return v !== null ? JSON.parse(v) : fallback; }
+    catch { return fallback; }
+  }
+  function setData(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+  function getWeekKey() {
+    const d = new Date();
+    const jan1 = new Date(d.getFullYear(), 0, 1);
+    const week = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+    return `week-${d.getFullYear()}-${week}`;
+  }
+
+  function dateKey(d) { return d.toISOString().slice(0, 10); }
+
+  function getWeekDays() {
+    const today = new Date();
+    const day = today.getDay();
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - day + i);
+      return d;
+    });
+  }
+
+  // ── Tabs ───────────────────────────────────────────────────────────────────
+  function showTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', ['tracker','settings'][i] === name);
+    });
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'settings') renderSettings();
+  }
+
+  // ── Tracker ────────────────────────────────────────────────────────────────
+  function render() {
+    const weekKey = getWeekKey();
+    const fedDays = getData(weekKey, []);
+    const today = new Date();
+    const todayKey = dateKey(today);
+    const weekDays = getWeekDays();
+
+    document.getElementById('fed-count').textContent = fedDays.length;
+    document.getElementById('remaining').textContent = Math.max(0, 2 - fedDays.length);
+
+    const daysEl = document.getElementById('days');
+    daysEl.innerHTML = '';
+    weekDays.forEach((d, i) => {
+      const key = dateKey(d);
+      const isSched = SCHEDULED.includes(d.getDay());
+      const isFed = fedDays.includes(key);
+      const isToday = key === todayKey;
+      const btn = document.createElement('button');
+      btn.className = ['day', isSched && 'scheduled', isFed && 'fed', isToday && 'today'].filter(Boolean).join(' ');
+      btn.innerHTML = `<span class="d-abbr">${DAY_ABBR[i]}</span><span class="d-num">${d.getDate()}</span>${isSched ? '<span class="d-dot"></span>' : ''}`;
+      btn.onclick = () => { toggleDay(key); };
+      daysEl.appendChild(btn);
+    });
+
+    const feedBtn = document.getElementById('feed-btn');
+    const todaySched = SCHEDULED.includes(today.getDay());
+    if (fedDays.includes(todayKey)) {
+      feedBtn.disabled = true;
+      feedBtn.textContent = '✓ Already fed today!';
+    } else if (todaySched) {
+      feedBtn.disabled = false;
+      feedBtn.textContent = '🐟 It\'s feed night — mark as fed!';
+    } else {
+      feedBtn.disabled = false;
+      feedBtn.textContent = '🐟 Mark fed today';
+    }
+
+    const rem = Math.max(0, 2 - fedDays.length);
+    document.getElementById('note').innerHTML = fedDays.length >= 2
+      ? '<strong>Goal reached!</strong> Cats are sorted this week 🎉'
+      : `<strong>${rem} more</strong> wet food meal${rem !== 1 ? 's' : ''} needed this week.`;
+
+    // History
+    const allFeeds = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('week-')) {
+        const v = getData(k, []);
+        if (Array.isArray(v)) v.forEach(d => allFeeds.push(d));
+      }
+    }
+    allFeeds.sort().reverse();
+    const histEl = document.getElementById('history');
+    histEl.innerHTML = allFeeds.length === 0
+      ? '<div class="hist-item" style="justify-content:center">No feeds logged yet</div>'
+      : allFeeds.slice(0, 8).map(d => {
+          const date = new Date(d + 'T12:00:00');
+          const label = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+          return `<div class="hist-item"><span>${label}</span><span>🐟</span></div>`;
+        }).join('');
+  }
+
+  function toggleDay(key) {
+    const weekKey = getWeekKey();
+    const fedDays = getData(weekKey, []);
+    const idx = fedDays.indexOf(key);
+    if (idx >= 0) fedDays.splice(idx, 1); else fedDays.push(key);
+    setData(weekKey, fedDays);
+    render();
+    showToast(idx >= 0 ? 'Removed ↩' : 'Logged! 🐟');
+  }
+
+  function markToday() { toggleDay(dateKey(new Date())); }
+
+  // ── Settings ───────────────────────────────────────────────────────────────
+  function renderSettings() {
+    document.getElementById('time-wed').value = getData('timeWed', '18:00');
+    document.getElementById('time-sun').value = getData('timeSun', '18:00');
+
+    const messages = getData('messages', DEFAULT_MESSAGES);
+    document.getElementById('messages-list').innerHTML = messages.map((msg, i) => `
+      <div class="msg-item">
+        <span>${msg}</span>
+        <button class="del-btn" onclick="deleteMessage(${i})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function saveTimes() {
+    setData('timeWed', document.getElementById('time-wed').value);
+    setData('timeSun', document.getElementById('time-sun').value);
+    showBadge('time-saved');
+    // Re-register service worker schedule
+    scheduleNotifications();
+  }
+
+  function addMessage() {
+    const input = document.getElementById('new-msg');
+    const text = input.value.trim();
+    if (!text) return;
+    const messages = getData('messages', DEFAULT_MESSAGES);
+    messages.push(text);
+    setData('messages', messages);
+    input.value = '';
+    renderSettings();
+    showBadge('msg-saved');
+  }
+
+  function deleteMessage(idx) {
+    const messages = getData('messages', DEFAULT_MESSAGES);
+    if (messages.length <= 1) { showToast('Keep at least one message!'); return; }
+    messages.splice(idx, 1);
+    setData('messages', messages);
+    renderSettings();
+    showBadge('msg-saved');
+  }
+
+  function showBadge(id) {
+    const el = document.getElementById(id);
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  }
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+  async function requestNotifications() {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      document.getElementById('notif-banner').classList.remove('show');
+      showToast('Notifications enabled! 🔔');
+      await scheduleNotifications();
+    } else {
+      showToast('Notifications blocked — check browser settings');
+    }
+  }
+
+  async function scheduleNotifications() {
+    if (!('serviceWorker' in navigator)) return;
+    const reg = await navigator.serviceWorker.ready;
+    if (!reg) return;
+
+    const wedTime = getData('timeWed', '18:00').split(':');
+    const sunTime = getData('timeSun', '18:00').split(':');
+
+    // Tell service worker the schedule
+    if (reg.active) {
+      reg.active.postMessage({
+        type: 'SCHEDULE',
+        wedHour: parseInt(wedTime[0]),
+        wedMin: parseInt(wedTime[1]),
+        sunHour: parseInt(sunTime[0]),
+        sunMin: parseInt(sunTime[1]),
+        messages: getData('messages', DEFAULT_MESSAGES),
+      });
+    }
+  }
+
+  async function sendTestNotification() {
+    // Request permission if not already granted
+    if (Notification.permission === 'default') {
+      const p = await Notification.requestPermission();
+      if (p !== 'granted') { showToast('Please allow notifications when prompted'); return; }
+    }
+    if (Notification.permission === 'denied') {
+      showToast('Notifications are blocked — check your browser settings');
+      return;
+    }
+
+    const messages = getData('messages', DEFAULT_MESSAGES);
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+
+    // Try service worker first, fall back to direct Notification
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification('🧪 Test — Whisker Meals', {
+          body: msg,
+          icon: 'icon-192.png',
+          tag: 'whisker-test',
+        });
+      } else {
+        new Notification('🧪 Test — Whisker Meals', { body: msg });
+      }
+      showToast('Test sent! Check your notifications 🔔');
+    } catch (e) {
+      // Final fallback
+      try {
+        new Notification('🧪 Test — Whisker Meals', { body: msg });
+        showToast('Test sent! 🔔');
+      } catch (e2) {
+        showToast('Could not send — try from home screen');
+      }
+    }
+  }
+
+  // ── Install prompt ─────────────────────────────────────────────────────────
+  let deferredPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('install-banner').classList.add('show');
+  });
+
+  async function installApp() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('install-banner').classList.remove('show');
+    if (outcome === 'accepted') showToast('App installed! 🐱');
+  }
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  async function init() {
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      try {
+        await navigator.serviceWorker.register('sw.js');
+        await scheduleNotifications();
+      } catch (e) {
+        console.log('SW registration failed:', e);
+      }
+    }
+
+    // Show notification banner if not granted
+    if (Notification.permission === 'default') {
+      document.getElementById('notif-banner').classList.add('show');
+    }
+
+    render();
+  }
+
+  init();
+</script>
+</body>
+</html>
